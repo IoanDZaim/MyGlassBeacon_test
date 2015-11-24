@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MyGlassBeacon_test</string>
+    <string name="title_activity_main">BeaconsSearch</string>
+    <string name="hello_world">Hello world! I see you found the beacon!</string>
+</resources>
