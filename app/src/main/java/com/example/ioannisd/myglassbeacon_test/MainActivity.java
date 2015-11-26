@@ -249,7 +249,7 @@ public class MainActivity extends Activity implements SensorEventListener{
 
 
     private View buildView() {
-        CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT);
+        CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT_FIXED);
         card.setText("The distance of the beacons is as follows -Beacon1: " + Beacon1Dist + " -Beacon2: " + Beacon2Dist + " -Beacon3: " + Beacon3Dist);
         return card.getView();
     }
