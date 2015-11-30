@@ -58,17 +58,12 @@ public class MainActivity extends Activity implements SensorEventListener{
     private Handler handler = new Handler();
     private Region TeliSpace;
     Beacon[] Beacons;
-    private enum Distance {UNKNOWN, IMMEDIATE, NEAR, FAR}
+    String[] names;
     Distance[] BeaconDist;
+    //int[][] MajMin;
+    private enum Distance {UNKNOWN, IMMEDIATE, NEAR, FAR}
     private static final String TAG="Ranged Beacons";
     private static final String ESTIMOTE_PROXIMITY_UUID= "B9407F30-F5F8-466E-AFF9-25556B57FE6D";
-    private static final int Beacon1Major=29740;
-    private static final int Beacon1Minor=13061;
-    private static final int Beacon2Major=42439;
-    private static final int Beacon2Minor=55045;
-    private static final int Beacon3Major=8427;
-    private static final int Beacon3Minor=15281;
-
     private static final double ImmediateThres=0.2;
     private static final double nearThres=0.9;
     private static final double farThres=3.1;
@@ -83,79 +78,43 @@ public class MainActivity extends Activity implements SensorEventListener{
         sensorManager= (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         sensorManager.registerListener(this, stepSensor,SensorManager.SENSOR_DELAY_NORMAL);
-
+        //final int[][] MajMin={{29740,42439,8427},{13061,55045,15281}};
+        //MajMin = new int[2][3];
+        names= new String[3];
         TeliSpace= new Region("regionID", ESTIMOTE_PROXIMITY_UUID, null, null);
         beaconManager =new BeaconManager(getApplicationContext());
-        //((Beacon) arrayListBeacon[0]).getMajor();
-
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
            @Override
             public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        for (Beacon beacon:beacons ) {
-                           if (beacon.getMajor()==Beacon1Major && beacon.getMinor()==Beacon1Minor) {
-                               Beacons[0]=beacon;
-                           }//1st
-                           if (beacon.getMajor()==Beacon2Major && beacon.getMinor()==Beacon2Minor){
-                                Beacons[1]=beacon;
-                            }//2nd if
-                            if (beacon.getMajor()==Beacon3Major && beacon.getMinor()==Beacon3Minor){
-                                Beacons[2]=beacon;
-                            }//3rd if
+                        int j=0;
+                        for (Beacon beacon:beacons) {
+                            Beacons[j] = beacon;
+                            names[j] = beacon.getMacAddress();
+                            if (Beacons[j] != null) {
+                                double Beacon1Distance = Utils.computeAccuracy(Beacons[j]);
+                                Log.d(TAG, "Beacon1Distance: " + Beacon1Distance + " " + BeaconDist[j]);
+                                if (Beacon1Distance > farThres) {
+                                    BeaconDist[j] = Distance.UNKNOWN;
+                                } else if (Beacon1Distance < farThres && Beacon1Distance > nearThres) {
+                                    BeaconDist[j] = Distance.FAR;
+                                } else if (Beacon1Distance < nearThres && Beacon1Distance > ImmediateThres) {
+                                    BeaconDist[j] = Distance.NEAR;
+                                } else if (Beacon1Distance < ImmediateThres) {
+                                    BeaconDist[j] = Distance.IMMEDIATE;
+                                }//if
+                            } else {
+                                Log.w("Beacon " , "Is not detected");
+                            }//else
+                            j++;
                         }//for
-                        if (Beacons[0] !=null){
-                           double Beacon1Distance= Utils.computeAccuracy(Beacons[0]);
-                            Log.d(TAG, "Beacon1Distance: "+ Beacon1Distance+" "+BeaconDist[0]);
-                            if (Beacon1Distance > farThres){
-                                BeaconDist[0]=Distance.UNKNOWN;
-                            }else if (Beacon1Distance < farThres && Beacon1Distance > nearThres){
-                                BeaconDist[0]=Distance.FAR;
-                            }else if (Beacon1Distance < nearThres && Beacon1Distance > ImmediateThres){
-                                BeaconDist[0]=Distance.NEAR;
-                            }else if (Beacon1Distance <ImmediateThres) {
-                                BeaconDist[0]=Distance.IMMEDIATE;
-                            }
-                        }else{
-                            Log.w("First Beacon","Is not detected");
-                        }
-                        if (Beacons[1] !=null){
-                            double Beacon2Distance= Utils.computeAccuracy(Beacons[1]);
-                            Log.d(TAG, "Beacon2Distance: "+ Beacon2Distance+" "+BeaconDist[1]);
-                            if (Beacon2Distance > farThres){
-                                BeaconDist[1]=Distance.UNKNOWN;
-                            }else if (Beacon2Distance < farThres && Beacon2Distance > nearThres){
-                                BeaconDist[1]=Distance.FAR;
-                            }else if (Beacon2Distance < nearThres && Beacon2Distance > ImmediateThres){
-                                BeaconDist[1]=Distance.NEAR;
-                            }else if (Beacon2Distance <ImmediateThres) {
-                                BeaconDist[1]=Distance.IMMEDIATE;
-                            }
-                        }else {//2nd beacon null check
-                            Log.w("Second Beacon","Is not detected");}
-                        if (Beacons[2] !=null){
-                            double Beacon3Distance= Utils.computeAccuracy(Beacons[2]);
-                            Log.d(TAG, "Beacon3Distance: "+ Beacon3Distance+" "+BeaconDist[2]);
-                            if (Beacon3Distance > farThres){
-                                BeaconDist[2]=Distance.UNKNOWN;
-                            }else if (Beacon3Distance < farThres && Beacon3Distance > nearThres){
-                                BeaconDist[2]=Distance.FAR;
-                            }else if (Beacon3Distance < nearThres && Beacon3Distance > ImmediateThres){
-                                BeaconDist[2]=Distance.NEAR;
-                            }else if (Beacon3Distance <ImmediateThres) {
-                                BeaconDist[2]=Distance.IMMEDIATE;
-                            }
-                        }else {//3rd beacon null check
-                            Log.w("Third Beacon","Is not detected");}
                        setContentView(buildView());
                     }//run
                 }/**thread*/);
             }//onBeaconDiscovered
         }/** listener */)/**listener*/;
-
-
-
         mView = buildView();
         mCardScroller = new CardScrollView(this);
         mCardScroller.setAdapter(new CardScrollAdapter() {
@@ -202,9 +161,6 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     }//onCreate
 
-
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -239,7 +195,8 @@ public class MainActivity extends Activity implements SensorEventListener{
 
     private View buildView() {
         CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT_FIXED);
-        card.setText("The distance of the beacons is as follows -Beacon1: " + BeaconDist[0] + " -Beacon2: " + BeaconDist[1] + " -Beacon3: " + BeaconDist[2]);
+        card.setText("The distance of the beacons is as follows --- "+names[0]+" : " + BeaconDist[0]+ " ---" + names[1]+ " : " + BeaconDist[1]+" ---" + names[2] + ": " + BeaconDist[2]);
+        //card.setText("The distance of the beacons is as follows -Beacon1: " + BeaconDist[0] + " -Beacon2: " + BeaconDist[1] + " -Beacon3: " + BeaconDist[2]);
         return card.getView();
     }
 
