@@ -30,7 +30,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
@@ -55,18 +54,14 @@ public class MainActivity extends Activity implements SensorEventListener{
     private View mView;
     private SensorManager sensorManager;
     private Sensor stepSensor;
-    private Handler handler = new Handler();
     private Region TeliSpace;
     Beacon[] Beacons;
     String[] names;
     Distance[] BeaconDist;
-    //int[][] MajMin;
     private enum Distance {UNKNOWN, IMMEDIATE, NEAR, FAR}
     private static final String TAG="Ranged Beacons";
     private static final String ESTIMOTE_PROXIMITY_UUID= "B9407F30-F5F8-466E-AFF9-25556B57FE6D";
-    private static final double ImmediateThres=0.2;
-    private static final double nearThres=0.9;
-    private static final double farThres=3.1;
+    Double[] threshold = {0.2,0.9,3.1};
 
 
 
@@ -78,8 +73,6 @@ public class MainActivity extends Activity implements SensorEventListener{
         sensorManager= (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         sensorManager.registerListener(this, stepSensor,SensorManager.SENSOR_DELAY_NORMAL);
-        //final int[][] MajMin={{29740,42439,8427},{13061,55045,15281}};
-        //MajMin = new int[2][3];
         names= new String[3];
         TeliSpace= new Region("regionID", ESTIMOTE_PROXIMITY_UUID, null, null);
         beaconManager =new BeaconManager(getApplicationContext());
@@ -96,13 +89,13 @@ public class MainActivity extends Activity implements SensorEventListener{
                             if (Beacons[j] != null) {
                                 double Beacon1Distance = Utils.computeAccuracy(Beacons[j]);
                                 Log.d(TAG, "Beacon1Distance: " + Beacon1Distance + " " + BeaconDist[j]);
-                                if (Beacon1Distance > farThres) {
+                                if (Beacon1Distance > threshold[2]) {
                                     BeaconDist[j] = Distance.UNKNOWN;
-                                } else if (Beacon1Distance < farThres && Beacon1Distance > nearThres) {
+                                } else if (Beacon1Distance < threshold[2] && Beacon1Distance > threshold[1]) {
                                     BeaconDist[j] = Distance.FAR;
-                                } else if (Beacon1Distance < nearThres && Beacon1Distance > ImmediateThres) {
+                                } else if (Beacon1Distance < threshold[1] && Beacon1Distance > threshold[0]) {
                                     BeaconDist[j] = Distance.NEAR;
-                                } else if (Beacon1Distance < ImmediateThres) {
+                                } else if (Beacon1Distance < threshold[0]) {
                                     BeaconDist[j] = Distance.IMMEDIATE;
                                 }//if
                             } else {
@@ -143,10 +136,7 @@ public class MainActivity extends Activity implements SensorEventListener{
                 return AdapterView.INVALID_POSITION;
             }
         });
-
-
         // TAP Listener
-
         mCardScroller.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -156,16 +146,12 @@ public class MainActivity extends Activity implements SensorEventListener{
 
             }
         });
-
         setContentView(mCardScroller);
-
     }//onCreate
 
     @Override
     protected void onResume() {
         super.onResume();
-
-
         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
             @Override
             public void onServiceReady() {
@@ -176,9 +162,8 @@ public class MainActivity extends Activity implements SensorEventListener{
                 }
             }
         });
-
         mCardScroller.activate();
-    }
+    }//onResume
 
     @Override
     protected void onPause() {
@@ -189,9 +174,7 @@ public class MainActivity extends Activity implements SensorEventListener{
             e.printStackTrace();
         }
         super.onPause();
-    }
-
-
+    }//onPause
 
     private View buildView() {
         CardBuilder card = new CardBuilder(this, CardBuilder.Layout.TEXT_FIXED);
@@ -199,8 +182,6 @@ public class MainActivity extends Activity implements SensorEventListener{
         //card.setText("The distance of the beacons is as follows -Beacon1: " + BeaconDist[0] + " -Beacon2: " + BeaconDist[1] + " -Beacon3: " + BeaconDist[2]);
         return card.getView();
     }
-
-
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -217,4 +198,4 @@ public class MainActivity extends Activity implements SensorEventListener{
         return null;
     }
 */
-}
+}//main
